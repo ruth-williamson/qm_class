@@ -1,0 +1,399 @@
+---
+title: 'Problem Set 02'
+author: "Ruth Williamson: Group 4"
+date: 'Last updated: `r Sys.Date()`'
+format:
+  html:
+    toc: true
+    number-depth: 3
+    toc-location: left
+    embed-resources: true
+---
+
+
+## Setup
+
+```{r}
+#| label: setup
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(cowplot)
+theme_set(theme_cowplot())
+```
+
+
+## Working Directory
+
+By default, R will read and write files from its working directory. The status of the current directory can be found at the top of the Console window. You can also check the current working directory with the command `getwd()`.
+
+- If you use RStudio Projects, then most of the challenges of working directories are avoided, because you will be in the correct directory and all file operations will take place relative to that directory.
+
+
+### Best practices
+
+Store all the files for an analysis (i.e., problem set) in a single directory. You might have the following directory structure:
+
+- Quant_Meth_Life_Sci
+    - Lecture_Slides
+    - Docs
+    - Problem_Sets
+        - PS_01
+            - `PS_1.qmd`
+            - other files
+        - PS_02
+            - `PS_02.qmd`
+            - other files
+        - PS_03, etc.
+
+Then set the R working directory to the current active file using the RStudio menus: **Session $\rightarrow$ Set Working Directory $\rightarrow$ To Source File Location**.
+
+Setting the working directory to the location of the current files will ensure that you can directly access the data files from the local folder, and that any files which are written will be in that directory.
+
+As you get more comfortable with R, you can move files around, use sub-directories, etc. For now, keep it simple and store associated files in the same directory, even if this means duplicating files (which is something you definitely don't want to do in general practice).
+
+
+### Please do not use `setwd()`
+
+You will often see tutorials online that advise you to set the working directory explicitly in an R script using the function `setwd()`. This practice is unnecessary and often counterproductive for a couple of reasons.
+
+- When you are working with `.qmd` files and click "Render" RStudio starts a new R session *in the directory* that the qmd file is located. Thus, if you use `setwd()` within a R chunk of an qmd file, you will get a warning. Better practice when working with an qmd file interactively is to set the R working directory using the menu commands: **Session $\rightarrow$ Set Working Directory $\rightarrow$ To Source File Location**. This way, you will be able to work interactively in RStudio and the relative paths will be the same as when you render. Using an RStudio project does this step for you.
+- If you set the working directory explicitly, then your files will be less portable. For example, if you move the file from one machine to another, it is very likely that the full path to your working directory will change. So you are left with either changing that every time you change computers or switching between `setwd()` statements. Better to just set the working directory with the RStudio menu and not have to go through such contortions.
+
+
+### Activity
+
+Organize your files and set the working directory to the directory where this file and the required data files for this problem set are located. In the code chunk below check your working directory and use the '#' to outline and describe the folder structure you have chosen.
+
+```{r}
+getwd()
+
+#Documents
+  #Quant_Methods_Class
+    #QMLS1_2026
+      #R Problem Sets
+        #PS_2
+
+```
+
+
+## Loading Packages
+
+> In R, the fundamental unit of shareable code is the package. A package bundles together code, data, documentation, and tests, and is easy to share with others. As of January 2015, there were over 6,000^[There are >20,000 as of January, 2024] packages available on the Comprehensive R Archive Network, or CRAN, the public clearing house for R packages. This huge variety of packages is one of the reasons that R is so successful: the chances are that someone has already solved a problem that you're working on, and you can benefit from their work by downloading their package. (http://r-pkgs.had.co.nz/intro.html)
+
+The `library()` function with the following syntax is used to load packages:
+
+```{r}
+#| eval: false
+
+library(tidyverse)
+```
+
+Packages much be installed before they can be loaded. If you get a message like:
+
+```
+Error in library("tidyverse") : there is no package called 'tidyverse'
+```
+
+It means that the package is not installed. First install the package using the "Packages" pane.
+
+After you have installed the package, rerun the code chunk that includes the `library()`^[Inside the call to `library()`, package names do not need to be quoted (but they can be without incident).] commands.
+
+
+### Best practices (things to remember)
+
+- Although you can install packages from the command line (e.g., `install.packages("cowplot")`), if you use the **Packages** pane, then you won't make the mistake of leaving `install.packages()` in a code chunk that runs each time to render a file.
+- Packages only need to be installed once on each computer. They are stored locally.
+- Packages *need to be loaded* (`library()`) each time you restart R. Loaded packages are not persistent across R sessions.
+- Load all of the packages you need at the start of a document to keep track of what packages your analysis needs.
+
+
+### Activity
+
+In the *Setup* code chunk at the beginning of this document, add code to load the following packages, which you will need for this problem set:
+
+1. `tidyverse`
+2. `cowplot`
+
+## National Health and Nutrition Examination Survey (NHANES)
+
+The National Health and Nutrition Examination Survey (NHANES) was established to assess the health and nutrition status of a broad cross-section of the United States population. It contains [many measured variables](https://wwwn.cdc.gov/nchs/nhanes/Default.aspx), but we will work with heights.
+
+
+### Loading data
+
+- Load the file `NHANES.csv`
+- Filter individuals where Sex is "Male" (individuals self-identifying as male)
+
+```{r}
+nhanes <- read_csv("../../Data/PS2_data/NHANES.csv")
+
+nhanes_male <- nhanes |>
+    filter(Sex == "Male")
+    nrow(nhanes_male)
+
+
+```
+
+How many observations are there?
+
+> 13137 unfiltered and 6465 filtered by male
+
+
+### Data visualization
+
+Plot a histogram of Height using the NHANES data.
+
+```{r}
+#ggplot(nhanes_male, aes(x=Height))+
+  #geom_histogram()
+
+nhanes_male |> ggplot(aes(x = Height))+
+  geom_histogram(bins = 120)
+
+```
+
+You will get a message saying that "`stat_bin()` using `bins = 30`. Pick better value with `binwidth`." That just means that you are using the default bin size for your histograms. In some situations, you would want to specify that value explicitly. For now, using the default value of 30 is fine. Later you can use the `binwidth` option to choose a different size.
+
+Describe the pattern you see:
+
+> Choosing a smaller number makes the histogram more bulky and less smooth and making it a higher number makes the value. Data is scewed to the right and most data is between 150 and 200.
+
+
+Now make a scatterplot of Height vs. Age.
+
+```{r}
+nhanes_male |> ggplot(aes(x = Age, y = Height))+
+  geom_point()
+
+```
+
+What patterns do you observe? Does this plot help you make sense of the histogram above?
+
+> Height increases until about age 20 then stabilized until it slightly decreases in the later ages of 60-80. Yes since it tells you at what time they they reach that height rather than the general distribution.
+
+
+Filter out any individuals less than Age 20. Make a second histogram of just this data.
+
+```{r}
+nhanes_nokids <- nhanes_male |> filter(Age>=20)
+
+nhanes_nokids |> ggplot(aes(x =Height))+
+  geom_histogram()
+
+```
+
+Describe what patterns you observe.
+
+> Now we see a normal distribution of male heights with a mean of around 170
+
+
+
+## Plant Growth Rates
+
+### Loading Data
+
+We will will use a dataset from Hautier, Yann, et al. (2020), *Fast and furious: Early differences in growth rate drive short-term plant dominance and exclusion under eutrophication.* In this paper, the authors are trying to understand the mechanisms by which diversity is lost under fertilization (i.e., eutrophication). One way they think some species have an advantage is by having a fast early growth rate.  Let's tidy up this dataset so we can look at the trends in growth of different plant species.
+
+Read in the plant growth data in "growthrate_data.csv" using the function `read_csv()`, assign it as an object `gr`, and print the object by putting `gr` on a line by itself.
+
+```{r}
+
+gr <- read_csv("../../Data/PS2_data/growthrate_data.csv")
+
+gr
+
+```
+
+
+## Exploring Data
+
+Any time you load data from an external source (which is almost every time you are working with data), you should check to make sure that the data has been correctly imported.
+
+You can use two functions to get a quick overview of the columns of a `data.frame` (or any R object, really), `str()` and `glimpse()`, each of which gives a list of the columns and their first few values.
+
+
+### Activity
+
+Type `str(gr)` or `glimpse(gr)` into the code chunk below and then render the .qmd file or execute the code chunk in the R console (green arrow in the upper right corner of the code chunk).
+
+```{r}
+str(gr)
+glimpse(gr)
+
+```
+
+Using the output of `str(gr)` or `glimpse(gr)`, answer the following questions.
+
+- How many rows are in `gr`?
+
+> 25
+
+
+- Does this agree with the number of rows in the csv file? Why or why not?
+
+> no because the data in the .csv file is 26 because it included the title rows but we didn't lose any data it just reads it differently.
+
+
+- How many columns are in `gr`? Does this agree with the number of columns in the csv file? Why or why not?
+
+> the columns are the same in both (13) the csv and the glimps, it is reading each column because it is storing data rather than just a default to take a title row.
+
+
+### Tidy Data
+
+We will be using `library(tidyverse)` quite often in this course, and one thing that makes this set of packages function really well is having "tidy" data. This will help you for future data manipulation, cleaning, visualization and analysis.
+
+
+#### Activity
+
+What are the 3 rules that make data tidy?
+
+> 1. each variable must have its own column
+> 2. each observation must have its own row
+> 3. each value must have its own cell
+
+
+
+The researchers entered their data with columns for plot, species, and then multiple columns for the biomass at the various days they collected their measurements. 
+
+Unfortunately, this data is not tidy.  Why not?
+
+> 
+
+
+To make this data go from wide to long format, you need to use the function `pivot_longer()`. Use this function to create a new object called `gr_long` that is tidy, with biomass as the value that fills a single column.
+
+```{r}
+
+
+```
+
+Now that you have tidied this data, explain why it is tidy. Hint - use the column and row descriptions to explain each of the three rules above.
+
+> 
+
+
+## Separating Columns
+
+The `separate()` function from the tidyverse allows you to split columns of your data into two or more new columns.
+
+Read the help file for `separate()` to see what options are available for converting new column types and for immediately dropping new columns that are created.
+
+
+### Activity
+
+If you print the structure of `gr`, you can see the `day` column is a `<chr>`, but we really only need the numeric part (i.e., removing the string "day_" from each). To be able to plot plant biomass growth through time, in the chunk below, pipe `gr_long` to `separate()` to split this column into two, making sure the column of integers for the day number is called `days`.
+
+
+```{r}
+
+
+```
+
+Check the structure of your modified tibble. You may notice that your new column `days` is still a character.  If so, go back and fix the code above so it is no longer a character.
+
+
+### Data Counts
+
+One way to get counts by group uses `group_by()` and `tally()`, which are part of tidyverse. `group_by()` splits data by factors (most commonly, but numeric types will work as well) and `tally()` adds up the number of observations in each of those groups. Similarly, the `count()` function does both steps in one, grouping by the columns inside `()` and then counting.
+
+If you only want the counts, then using `count()` saves a step. However, if you plan further operations on the grouped data using `group_by()`, then the first method is preferred.
+
+
+#### Activity
+
+In the chunk below, pipe `gr_long` to `group_by()`, grouping by species. Then pipe that to `tally()`. `tally()` does not require any arguments when used this way. Also try the same using `count()`.
+
+```{r}
+
+
+```
+
+Do you have equal sample size across all species?
+
+> 
+
+
+### Missing Data (NA's)
+
+Missing data can sometimes throw off our estimates if we are not sure if data is there or not. R will code blank cells in your dataset as `NA` when you read in your data. `NA`'s are explicit if you can see them in your dataset, and they are implicit if a row does not exist in a dataset when a data value is missing. Explicit `NA`'s will be counted by `tally()`.
+
+
+#### Activity
+
+Our code above indicates that we have equal sample size in our data for each species, however you may have noticed that in our initial dataset there are some `NA`'s (check in Excel).  Do we still have `NA`'s in our dataset?
+
+> 
+
+The function `is.na()` returns true when a value is `NA`. By summing the number of `TRUE` `NA`'s, you can see how many there are. Below write a line of code that sums the result of `is.na()` applied to the `biomass` column.
+
+```{r}
+
+
+```
+
+How many `NA`'s are there?
+
+> 
+
+So based on this, do we really have equal sample size?  Why not?
+
+> 
+
+
+The `drop_na()` function allows you to drop rows that have `NA`s in them in order to check to see if your sample size is equal. In the chunk below, pipe `gr_long` to `drop_na()` and save it as a new dataset called `gr_long2`. Then re-tally your data to see if you have equal sample size across all species.
+
+```{r}
+
+
+```
+
+Are the sample sizes equal across species?
+
+> 
+
+
+## Data Visualization
+
+Let's look at this growth rate data to see if we see any differences between species.
+
+The `cowplot` package has a nice built-in ggplot theme that produces nice plots (there are lots of ggplot themes available). A good place to set this is in the setup chunk at the top of this document. Go there and add this code (without the tic marks): `theme_set(theme_cowplot())`.
+
+
+### Activity
+
+Using your object `gr_long2`, create a plot that shows the biomass per species at each date as a scatter plot, and draw a straight line through the average of all points per species using `geom_smooth()`.  Make sure each species is differentiated by assigning the color aesthetic to `species` (inside `aes()`), which will also plot a separate line for each. Also make sure to clean up your plot by adding a little jitter, if your points are strongly overlapping.
+
+
+```{r}
+
+
+```
+
+Which species appears to have the fastest rate of growth (biomass change per time)?
+
+> 
+
+
+Look back at the plot you just made. It appears a straight line, linear fit doesn't model the data very well. Growth rate appears to be flat for early days and then increases exponentially. In addition, the linear fit is predicting negative biomasses for early time points. Let's transform how our data is plotted to see if we can improve the fit. Make a new plot and add the geom `scale_y_log10()` to plot the y-axis on a log10 scale.
+
+```{r}
+
+
+```
+
+Does a log transformation of biomass improve the linear fit of the model?
+
+> 
+
+
+## AI Statement
+
+Please indicate whether you used any generative AI tools to help you with this problem set and explain how you used these. An example of how to structure this statement is below. If you did not use generative AI, you can simply state: "I did not use AI for this problem set."
+
+Example statement structure: "I acknowledge the use of AI in completing this assignment and would like to provide a brief explanation of how I utilized AI, specifically [LLM], as a tool to support my work. For this assignment, I employed [LLM] to [describe the specific purpose or task]. To do so I crafted the following prompts: [List prompts used]"
+
+>
+
