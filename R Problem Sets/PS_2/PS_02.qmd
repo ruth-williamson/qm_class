@@ -70,8 +70,8 @@ Organize your files and set the working directory to the directory where this fi
 getwd()
 
 #Documents
-  #Quant_Methods_Class
-    #QMLS1_2026
+  #githubprojects
+    #qm_class
       #R Problem Sets
         #PS_2
 
@@ -180,7 +180,7 @@ Filter out any individuals less than Age 20. Make a second histogram of just thi
 nhanes_nokids <- nhanes_male |> filter(Age>=20)
 
 nhanes_nokids |> ggplot(aes(x =Height))+
-  geom_histogram()
+  geom_histogram(bins = 120)
 
 ```
 
@@ -260,19 +260,22 @@ The researchers entered their data with columns for plot, species, and then mult
 
 Unfortunately, this data is not tidy.  Why not?
 
-> 
+> missing data points with no NA.
+> each observation had it's own column rather than it's own row.
 
 
 To make this data go from wide to long format, you need to use the function `pivot_longer()`. Use this function to create a new object called `gr_long` that is tidy, with biomass as the value that fills a single column.
 
 ```{r}
-
+gr_long <- gr |> pivot_longer( starts_with("day"),
+                               names_to = "Day",
+                               values_to = "Biomass")
 
 ```
 
 Now that you have tidied this data, explain why it is tidy. Hint - use the column and row descriptions to explain each of the three rules above.
 
-> 
+> Now this is tidy because it has one variable per column and one observation per row and each value has it's own cell with NA being missing values.
 
 
 ## Separating Columns
@@ -288,7 +291,14 @@ If you print the structure of `gr`, you can see the `day` column is a `<chr>`, b
 
 
 ```{r}
+?separate()
 
+gr_long <- gr_long |> separate(
+  col = Day,
+  into = c(NA,"days"),
+  sep = "_",
+  convert = TRUE
+)
 
 ```
 
@@ -307,13 +317,16 @@ If you only want the counts, then using `count()` saves a step. However, if you 
 In the chunk below, pipe `gr_long` to `group_by()`, grouping by species. Then pipe that to `tally()`. `tally()` does not require any arguments when used this way. Also try the same using `count()`.
 
 ```{r}
+gr_long |> group_by(species) |> tally()
 
+gr_long |> group_by(species) |> 
+  count()
 
 ```
 
 Do you have equal sample size across all species?
 
-> 
+> Yes, we have 55 in each species group. 
 
 
 ### Missing Data (NA's)
@@ -325,34 +338,38 @@ Missing data can sometimes throw off our estimates if we are not sure if data is
 
 Our code above indicates that we have equal sample size in our data for each species, however you may have noticed that in our initial dataset there are some `NA`'s (check in Excel).  Do we still have `NA`'s in our dataset?
 
-> 
+> we do still have several NA's in our data set and it is reading the code as if it is a real number thus there are equal sample sizes shown in the previous step, however this shouldn't be.
 
 The function `is.na()` returns true when a value is `NA`. By summing the number of `TRUE` `NA`'s, you can see how many there are. Below write a line of code that sums the result of `is.na()` applied to the `biomass` column.
 
 ```{r}
-
+is.na(gr_long$Biomass) |> 
+  sum()
 
 ```
 
 How many `NA`'s are there?
 
-> 
+> 6
 
 So based on this, do we really have equal sample size?  Why not?
 
-> 
+> No, some of them have missing data points so the groups are no longer equal.
 
 
 The `drop_na()` function allows you to drop rows that have `NA`s in them in order to check to see if your sample size is equal. In the chunk below, pipe `gr_long` to `drop_na()` and save it as a new dataset called `gr_long2`. Then re-tally your data to see if you have equal sample size across all species.
 
 ```{r}
+gr_long2 <- gr_long |> drop_na()
 
+gr_long2 |> group_by(species) |>
+  tally()
 
 ```
 
 Are the sample sizes equal across species?
 
-> 
+> no they range from 52 to 55.
 
 
 ## Data Visualization
@@ -368,25 +385,34 @@ Using your object `gr_long2`, create a plot that shows the biomass per species a
 
 
 ```{r}
-
+gr_long2 |> ggplot(
+  aes(x= days, y=Biomass, color = species)) + 
+  geom_point() +
+  geom_jitter() +
+  geom_smooth(se=F)
 
 ```
 
 Which species appears to have the fastest rate of growth (biomass change per time)?
 
-> 
+> H
 
 
 Look back at the plot you just made. It appears a straight line, linear fit doesn't model the data very well. Growth rate appears to be flat for early days and then increases exponentially. In addition, the linear fit is predicting negative biomasses for early time points. Let's transform how our data is plotted to see if we can improve the fit. Make a new plot and add the geom `scale_y_log10()` to plot the y-axis on a log10 scale.
 
 ```{r}
-
+gr_long2 |> ggplot(
+  aes(x= days, y=Biomass, color = species)) + 
+  geom_point() +
+  geom_jitter() +
+  geom_smooth(se=F) +
+  scale_y_log10()
 
 ```
 
 Does a log transformation of biomass improve the linear fit of the model?
 
-> 
+> Yes, it helps spread apart the difference in the data and makes it easier to see the relative differences between the groups.
 
 
 ## AI Statement
@@ -395,5 +421,5 @@ Please indicate whether you used any generative AI tools to help you with this p
 
 Example statement structure: "I acknowledge the use of AI in completing this assignment and would like to provide a brief explanation of how I utilized AI, specifically [LLM], as a tool to support my work. For this assignment, I employed [LLM] to [describe the specific purpose or task]. To do so I crafted the following prompts: [List prompts used]"
 
->
+> We did not use Ai for this project.
 
