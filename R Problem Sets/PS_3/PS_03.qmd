@@ -1,0 +1,505 @@
+---
+title: 'Problem Set 03'
+author: "Ruth Williamson: Group 4"
+date: 'Last updated: `r Sys.Date()`'
+format:
+  html:
+    toc: true
+    number-depth: 3
+    toc-location: left
+    embed-resources: true
+---
+
+
+```{r}
+#| label: setup
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(readxl)
+library(ggplot2)
+
+
+```
+
+
+## Size Dimorphism in Spiders
+
+Sexual size dimorphism (SSD) refers to the difference in size between males and females of the same species. Spiders show some of the most dramatic cases where females are larger than males.
+
+The golden silk orb weaver (*Nephila clavipes*) is a species of spider that shows extreme SSD, in which males are about 2/3 smaller than females. This picture shows the size disparity between a female and male:
+
+![](https://cdn.shopify.com/s/files/1/0841/0073/products/il_570xN.917073770_s7se.jpg){width=50% fig-align="center" fig-alt="Image of a female and male golden silk orb weaver showing size dimorphism."}
+
+In contrast, in the wolf spider (*Pardosa ramulosa*), males and females do not show large size differences.
+
+![](https://crawford.tardigrade.net/journal/album/fordramulosa.jpg){width=50% fig-align="center" fig-alt="Image of wolf spiders showing no size dimorphism."}
+
+The file `Size_Dimorphism.xlsx` contains data on body mass and body length for males and females in these two species.
+
+
+## Data Validation and Cleaning
+
+One of the first steps in analysis is to make sure that the data you loaded into R is the data that you think you recorded, that all the groups are present in the correct counts, that there aren't any data entry errors, etc.
+
+
+### Activity
+
+Using the `read_excel()` function from the `readxl` package (install if you need to), load the file `Size_Dimorphism.xlsx` in R. Assign it to the object, `SSD`.
+
+```{r}
+SSD <- read_excel("Size_Dimorphism.xlsx")
+
+glimpse(SSD)
+```
+
+How many rows and columns of data are there in `SSD`?
+
+>200 rows and 5 columns
+
+
+## Number of Observations per Group
+
+This experiment is balanced, meaning there are equal numbers of males and females in each of two species (50 in each sex/species combination).
+
+
+#### Activity
+
+Check that this is the case by using `count()` to count the number of individuals by species and sex.
+
+```{r}
+SSD |>
+  count(Species, Sex)
+```
+
+It looks like something is not right. There are several rows with 1, 2, or 3 observations.
+
+Explain what appears to have happened during data entry.
+
+> Some of the sex designations are either capitalized or not capitalized and there are also some mis-spellings of some of the spider names.
+
+
+
+### Making Corrections
+
+We will fix the `Sex` variable first. Because you currently have a mix of lower and upper case, and we want all uppercase, we can use the built-in `toupper()` function which makes a string all uppercase. There is a similar `tolower()` function, if you happen to want all lower case.
+
+In this chunk, `mutate()` `Sex` using `toupper()`. Overwrite the `SSD` object from above with the output (basically you are overwriting the old `SSD` with a new version that has the corrected `Sex` column).
+
+Then use the same tallying code your wrote above to check that you now only have `F` and `M` in the `Sex` column.
+
+```{r}
+SSD <- SSD |>
+  mutate(Sex = toupper(Sex))
+
+SSD |>
+  count(Sex, Species)
+
+```
+
+You should now see that just two observations of `Species` are incorrect. There are a few ways to "find and replace" strings in R. The `stringr` package, which is loaded automatically as part of the tidyverse has a series of functions that start with `str_` to work with strings (find, replace, subset, etc.).
+
+Have a look through the help files for the `stringr` package to see what all is possible.
+
+We will use `str_replace()` to replace the misspelled names. `str_replace()` has the following basic syntax:
+
+```{r}
+zz <- c("x_1", "x_2")
+str_replace(zz, "x", "xyz")
+
+SSD <- SSD |> 
+  mutate(Species = str_replace(Species, "Pardosa_ramuloso", "Pardosa_ramulosa"),
+         Species = str_replace(Species, "Pardosa ramulosa", "Pardosa_ramulosa"))
+
+SSD |>
+  count(Sex, Species)
+```
+
+This code replaces `x` with `xyz`. In the following chunk, overwrite `Species` with a `mutate()`ed version of itself passed through `str_replace()` where you correct the two spellings that are incorrect. You will mutate `Species` twice, once for each correction. Then use the same code as above to tally the data and check that the four groups now have 50 observations each.
+
+```{r}
+
+SSD |>
+  count(Sex, Species)
+
+```
+
+Saving yourself the trouble of doing this exercise is one big reason to be careful when you enter data!!
+
+Your data is clean. At this point in the analysis, you could export your cleaned data to a new file. Alternately, you could just have these steps at the beginning of your qmd file with the analysis pipeline and just let me run each time your Rmd file is knitted. Either way would work, and there are benefits to both approaches. With the former, you will have a cleaned version of your data to work with (e.g., import) for later steps in the analysis. This is not ideal because it makes more files to keep track of. With the latter, you will have a full record of the steps you took to clean the data. The downside is that you need to make sure to run all the code each time you knit to be sure to have the corrected data. If you are analyzing data via a set of separate files, this might be impractical (e.g., if your 2nd analysis file needs the cleaned data).
+
+
+#### Writing Data
+
+One last step, let's write out your new, typo-free data. Look at the help for `write_csv()`, and write out your data to a new csv file named, `Size_Dimorphism_corrected.csv`.
+
+We prefer to use `write_csv()`, which is part of tidyverse, to R's built-in `write.csv()` (note _ vs. .). `write_csv()` has some friendlier default settings.
+
+```{r}
+write_csv(SSD, "Size_Dimorphism_corrected.csv" )
+```
+
+Now read your new file back in as if this next section is a new script. Feel free to overwrite your previous object, `SSD`. This is a good idea to avoid confusion. Use `read_csv()`.
+
+```{r}
+SSD <- read_csv("Size_Dimorphism_corrected.csv")
+```
+
+When you read in a file with `read_csv()`, you will see a message with the columns types (e.g., `chr` for character or `dbl` for numeric). This can be annoying if you have a lot of columns. Use the `read_csv()` option `show_col_types = FALSE` to turn off this message.
+
+
+### Data Filtering
+
+A very common activity when you are analyzing data is to take subsets, be they subsets of rows or one or more columns (or both simultaneously). Gaining experience at this kind of filtering will make you much more efficient.
+
+
+#### Activity
+
+To give you some practice filtering, filter your data in the following ways using both:
+
+1. base R functions
+2. tidyverse functions
+
+Verify your results match in each case. You do not need to save the resulting `data.frame`s.
+
+1. All *Pardosa ramulosa*
+2. All females of both species
+3. Body mass and sex for *Nephila clavipes*
+4. Rows 1-50 (either using base R or the `slice()` function from tidyverse [use `?slice` to view the help file])
+5. Mass of the largest female (by mass) in each species
+6. Male *Pardosa ramulosa* with body lengths less than 4 or greater than 6
+
+```{r}
+allpd_tdv <- SSD |> 
+  filter(Species == "Pardosa_ramulosa") #tidyverse
+
+allpd_r <- subset(SSD, Species == "Pardosa_ramulosa")  #baseR
+
+all.equal(allpd_tdv, allpd_r) #its saying not true but i believe it is
+
+#all females of both species
+
+allf_tdv <- SSD |>
+  filter(Sex == "F") #tidyverse 
+
+allf_r <- SSD[SSD$Sex == "F",] #baseR
+
+all.equal(allf_r, allf_tdv) #its saying not true but i believe it is
+
+#Body mass and sex for Nephila clavipes
+
+bm_s_nc_tdv <- SSD |>
+  filter(Species == "Nephila_clavipes") |>
+  select(Species, BodyMass, Sex) #tidyverse
+
+bm_s_nc_r<- SSD[SSD$Species=="Nephila_clavipes", c("Species","BodyMass", "Sex")] #baseR
+
+all.equal(bm_s_nc_r, bm_s_nc_tdv) #its saying not true but i believe it is
+
+
+#Selcting rows 1-50 (this is not showing up as equal )
+
+SSD_1_thru_50_tdv <- SSD |>
+  slice(1:50) #TidyVerse
+
+SSD_row_1_thru_50_br <-
+  SSD[1:50, ]
+
+all.equal(SSD_1_thru_50_tdv, SSD_row_1_thru_50_br)
+
+#largest female in both species
+
+lf_tdv <- SSD |>
+  group_by(Species) |>
+  filter(Sex == "F") |>
+  slice_max(BodyMass)
+
+lf_r <- tapply(SSD$BodyMass, 
+               SSD$Species,
+               FUN = max, #function max applied to multiple things
+               na.rm = TRUE) # used google ai answers to help find out a way to this one.
+
+print(lf_r)
+
+# Male *Pardosa ramulosa* with body lengths less than 4 or greater than 6
+
+mbl_tdv <- SSD |>
+  filter(Sex == "M", Species == "Pardosa_ramulosa") |> 
+  filter( BodyLength < 4 | BodyLength > 6 ) #tidyverse
+
+mbl_r <- SSD_pd_M_bl_r <- SSD[SSD$Sex == "M" & 
+                       SSD$Species == "Pardosa_ramulosa" &
+                       (SSD$BodyLength < 4  | SSD$BodyLength  > 6), ] #BaseR#baseR
+
+all.equal(mbl_r, mbl_tdv) #its saying not true but i believe it is
+
+
+```
+
+```{r}
+ssd1_50_tdv <- SSD|>slice(1:50) #tidyverse
+
+ssd1_50_r <- SSD[1:50,] #baseR
+  
+all.equal(ssd1_50_r, ssd1_50_tdv)
+```
+
+
+### Plotting Histograms
+
+To start looking at sexual size dimorphism, we will make some histograms. Histograms are the easiest method to visualize univariate data.
+
+
+#### Activity
+
+Start with a histogram of body length overall. Follow the code in the lectures if you want to.
+
+```{r}
+SSD |>
+  ggplot() +
+  geom_histogram(aes(x=BodyLength), binwidth = 2)
+```
+
+There are some obvious groupings here, but we don't know which species or sex the clusters represent. We need to separate both species and sex. One approach is to make a plot for each species with `fill` coding for sex (this is analogous to using color, but works with histograms). Try this.
+
+```{r}
+SSD |> 
+  ggplot() +
+  geom_histogram(aes(x=BodyLength, fill = Sex, binwidth = 2))
+```
+
+```{r}
+SSD |> 
+  ggplot() +
+  geom_density(aes(x=BodyLength, fill = Sex))
+```
+
+We could also visualize all groups with `facet_grid()`. Here is an example:
+
+```{r}
+SSD |>
+ggplot(aes(x = BodyLength)) +
+  geom_histogram() +
+  facet_grid(Species ~ .) +
+  labs(x = "Body Length", y = "Body Mass")
+```
+
+`facet_grid()` can take 1 or two arguments. The argument before `~` splits by rows, and after `~` splits by columns. If you only want one or the other use `.`. See the lecture slides for an example.
+
+With this you can clearly see SSD in *Nephila* but not in *Pardosa*.
+
+
+### Scatterplot
+
+You might be interested in the relationship between body length and body mass. Scatterplots are the most common way to visualize such *bivariate* relationships.
+
+
+#### Activity
+
+Create a scatterplot of body length and body mass. Use color to show `Sex` and facet by `Species.` Put body length on the x-axis. Add axis labels, but don't worry about units for now.
+
+```{r}
+SSD |>
+  ggplot(aes(x=BodyLength, y=BodyMass, color=Sex)) +
+  geom_point(size = 3) +
+  facet_grid(Species~.) +
+  labs(x = "Body Lenth", y= "Body Mass")
+```
+
+Describe the patterns you observe. Do you think this is a useful visualization? Why or why not?
+
+> This is awesome! I really like seeing the way you can easily subset the data without having to make one billion little excel tables like it is the dark ages hehe. In this we can see the species N has a large difference in male and female body mass and length while the 
+
+
+Because body length and body mass are related by an exponential power, if we take advantage of the math of logarithms and log-transform the data, that will linearize the relationship. Ignoring the y-intercepts:
+
+$$Mass \propto Length^b$$
+$$\log(Mass) \propto b \log(Length)$$
+
+Make two new variables that are the log10-transformations of body length and body mass using `mutate()`. Then plot the data again. Look at the help for `mutate` for hints. Then add new axis labels.
+
+```{r}
+SSD_log <- SSD |>
+  mutate(BodyLength_log = log10(BodyLength),
+         BodyMass_log = log10(BodyMass))
+
+SSD_log|>
+  ggplot(aes(x=BodyLength_log, y=BodyMass_log, color=Sex)) +
+  geom_point(size = 3) +
+  facet_grid(Species~.) +
+  labs(x = "Body Lenth log10", y= "Body Mass log10")
+
+```
+
+What does this plot tell you? Do you think this is a more effective visualization of the data?
+
+> Shows the linear relationship between the male and female differences
+
+
+Now add lines of best fit (`geom_smooth()`) and transparency (`alpha`) to your points. View the [ggplot documentation](https://ggplot2.tidyverse.org/) for help with alpha.
+
+```{r}
+
+SSD_log|>
+  ggplot(aes(x=BodyLength_log, y=BodyMass_log, color=Sex)) +
+  geom_point(size = 3, alpha = 0.5) +
+  geom_smooth(formula = y~x, method = "lm") +
+  facet_grid(Species~.) +
+  labs(x = "Body Lenth log10", y= "Body Mass log10")
+
+```
+
+What do these regression lines tell you?
+
+> The regression lines show us that most of the data points follow a relationship between longer spiders being heavier. 
+
+
+The process that you have just done, gradually building up a plot as part of exploratory data analysis, is what we recommend. Start with the most basic plot, like a scatterplot. Then add color for any groups and/or facetting. Notice patterns, and carry out data transformations. Add lines of best fit, etc. Until you get really fluent with ggplot, starting simple and building is the best approach.
+
+
+## Rainout Experiment
+
+In this next section, we will be practicing data manipulation and exploration. We will work with two files that contain data related to a "rainout" experiment. Changes in precipitation are commonly predicted with climate change, so rainout experiments are used to examine how different proposed future precipitation conditions (i.e., in our case high or low rain *reduction*) influences plant species composition and biomass.
+
+The first dataset (`rainout_plots.csv`) describes plot-level data. This experiment contains 8 subplots per plot. Thus, these plot-level data contain plot and subplot identities, as well as only a single value per subplot for each of its variables (e.g., light availability, biomass), because these are collected at the subplot level.
+
+We will also work with a dataset that contains information about species *within* each subplot called `rainout_plantspecies_presence.csv`. There will be multiple observations per subplot in this dataset, because the unique species in each subplot was recorded.
+
+Let's start with the plant composition data.  Read in `rainout_plantspecies_presence.csv` and save it to an object called `comp`. Look at the structure of this tibble.
+
+```{r}
+comp <- read_csv("rainout_plantspecies_presence.csv")
+
+str(comp)
+glimpse(comp)
+```
+
+
+### Summarizing
+
+One very important tool you will learn from the tidyverse is how to summarize your data. We will use the `summarize()` function quite a bit in this course, so let's get some practice.
+
+One thing we might want to know about is how many unique species are in each subplot within each plot. That way we can start to make predictions about how rain exclusion influences species richness.  Using `group_by()` and `summarize()`, calculate the number of unique species per subplot within each plot in `comp`. Save the new object as `richness`, and also name the new variable `richness`.
+
+Hint `(length(unique(<variable-of-interest>)))` will give you the number of rows that are unique within the groups you have set, which equates to the number of unique species, or richness, per subplot.
+
+
+#### Activity
+
+```{r}
+richness <- comp |>
+  group_by(plot_no) |>
+  group_by(subplot) |>
+  mutate(richness = length(unique(species))) #this is the one I made, and I'm not sure why it is like this
+
+richness2 <- comp |>
+  group_by(subplot, plot_no) |>
+  mutate(richness = length(unique(species))) #why is this better than the one above
+
+richness3 <- comp |>
+  group_by(plot_no, subplot) |>
+  mutate(richness = length(unique(species))) #this is the same as the one above
+```
+
+
+### Joining
+
+One of the most common things you will do in your data cleaning and exploration stage is join datasets together. This will become especially important if you store your data as separate, smaller files. In our case, we need to join our `richness` object with our plot-level information so we can examine how richness changes with our two rainout treatments (e.g., high rain removal and low rain removal).
+
+
+#### Activity
+
+Read in the plot-level data, and save it to an object called `plot_ids`.
+
+```{r}
+plot_ids <- read_csv("rainout_plots.csv")
+
+glimpse(plot_ids)
+glimpse(richness3)
+```
+
+As we discussed in lecture, there are many different functions for joining in the tidyverse. We will focus on `left_join()` here because you can use this for most joining you need to do, and switch the order of the datasets you are joining depending on your need. For example, `left_join(d1, d2)` is the same as `right_join(d2, d1)`.
+
+Join your plot level data to your species richness data using `left_join()`. You can save this as the same object that the richness was saved as previously, given this is the data you are building upon. Try doing this in two different ways, one where you specify the columns you want to join by, and one where you don't and let `left_join()` pick the columns that automatically match. This should help you see the power of these joining functions.
+
+```{r}
+richnessdf <- left_join(richness3,plot_ids)
+
+glimpse(richnessdf)
+
+
+richness_sp <- left_join(richness3, plot_ids, by=join_by(plot_no, subplot))
+glimpse(richness_sp)
+```
+
+
+### More Summarizing
+
+Along with the minimum, maximum, and range, two of the simplest and most common descriptive statistics are means and standard deviations.
+
+
+#### Activity
+
+Calculate the mean and standard deviation for species richness for each plot. Use `group_by()` and `summarize()`. Save this as a new object called `mean_richness`.
+
+```{r}
+mean_reachness <- richnessdf |>
+  group_by(plot_no, species) |>
+  summarize(avg_richness=mean(richness),
+            sd_richness =sd(richness))
+
+richness_sdm <- mean_richness2 <- richnessdf |>
+  group_by(plot_no) |>
+  summarize(mean(richness),sd(richness)) #good greif I have no idea what this one is doing
+
+richness_sct <- left_join(richness_sdm, richnessdf) #richness data with rain removal info and then 12x3 into that
+
+richness_sct <- richness_sct |>
+  mutate(plot_no = as.factor(plot_no)) #changing plot number to factor so it can be called as factor
+
+
+
+```
+
+To visualize whether there are consistent differences in richness between rainout treatments, we will plot our data.
+
+
+#### Activity
+
+Create a scatterplot that shows how rain removal influences the average species richness using a scatter plot.
+
+- Color the points by plot number in the `aes()`.
+- Add transparency and/or jitter to make sure you can see all points clearly. - Because plots are a category, make sure it is being treated as a factor when you make your plot.
+- Feel free to fix up the axis labels and choose a new color scheme if you wish.
+
+```{r}
+richness_sct |>
+  ggplot(aes(x=rain_removal, y=`mean(richness)`, color=plot_no)) +
+  geom_point(size = 3,
+             position = position_jitter(width = 0.3),
+             alpha = 0.5) +
+  labs(x="Rain Level", y = "Mean Richness")
+```
+
+With a scatterplot and this number of plots, it is difficult to see the trends per plot. Let's try a boxplot instead. Use `geom_boxplot` and specify different colors for different plot numbers in the `aes()`.
+
+
+```{r}
+richness_sct |>
+  ggplot(aes(x=rain_removal, y=richness, color=plot_no)) +
+  geom_boxplot() +
+  labs(x="Rain Level", y = "Mean Richness")
+
+```
+
+Notice how setting `color =` in the aesthetics causes ggplot to split the data into groups *automatically* and apply separate lines or boxplots to those data. This is a very powerful feature of ggplot that makes it possible to generate very complex plots very easily. In contrast, imagine doing 12 separate linear regressions, adding them one by one to the plot and keeping track of all their different colors.
+
+
+## AI Statement
+
+Please indicate whether you used any generative AI tools to help you with this problem set and explain how you used these. An example of how to structure this statement is below. If you did not use generative AI, you can simply state: "I did not use AI for this problem set."
+
+Example statement structure: "I acknowledge the use of AI in completing this assignment and would like to provide a brief explanation of how I utilized AI, specifically [LLM], as a tool to support my work. For this assignment, I employed [LLM] to [describe the specific purpose or task]. To do so I crafted the following prompts: [List prompts used]"
+
+> We used Gemini for number 6 of the filtering data to figure out how to get both less than 4 and greater than 6 in base R. We also asked it how to change a string into a vector. 
