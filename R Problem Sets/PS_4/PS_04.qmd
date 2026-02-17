@@ -1,0 +1,499 @@
+---
+title: 'Problem Set 04'
+author: "Ruth Williamson: Group 6"
+date: 'Last updated: `r Sys.Date()`'
+format:
+  html:
+    toc: true
+    number-depth: 3
+    toc-location: left
+    embed-resources: true
+---
+
+```{r}
+#| label: setup
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(readxl)
+library(cowplot)
+theme_set(theme_cowplot())
+```
+
+
+## Combining probabilities
+
+Among a hypothetical population, blood type probabilities for all the combinations of AB antigens and Rh status:
+
+|Type |Probability|
+|-----|-----------|
+| O+  |     0.39  |
+| O-  |     0.01  |
+| A+  |     0.27  |
+| A-  |     0.005 |
+| B+  |     0.25  |
+| B-  |     0.004 |
+| AB+ |     0.07  |
+| AB- |     0.001 |
+
+
+### Activity
+
+What are the probabilities that a randomly selected individual has:
+
+a. Type A+ blood
+
+
+>  0.27
+
+b. Type O blood
+
+> 0.39 + 0.01
+
+c. Type AB blood
+
+> 0.07 + 0.001
+
+d. *Not* Type AB blood
+
+> 1-(0.07+0.001)
+
+e. Type A *or* type B blood
+
+> (0.27+0.005) + (0.25+0.004)
+
+f. Rh+ blood
+
+> (0.39 + 0.27 + 0.25 + 0.007)
+
+
+## PSA
+
+Elevated prostate-specific antigen (PSA) can indicate prostate cancer but can also result from other conditions unrelated to cancer. As with most medical tests, the PSA blood test, which is used as a screen for prostate cancer, is not 100% accurate. 4% of men over 65 have prostate cancer. When cancer is present, the test is positive 75% of the time. When cancer is absent, the test is positive in 7% of tests.
+
+
+### Activity
+
+What is the probability that randomly tested person over 65 has prostate cancer, given that they have received a positive PSA test? Try to solve this using both of the following methods.
+
+You are trying to find $Pr[Ca|Positive~Test]$.
+
+
+#### Using a number of hypothetical tests
+
+Assume that you carry out 1,000 tests. Note that is doesn't matter that there are "partial" positive tests (i.e., 67.2). The calculations work just fine.
+
+Calculate the following:
+
+- Total with cancer
+- Total with no cancer
+- Positive tests among cancer group
+- Positive tests among no cancer group
+- Total positive tests
+- Ratio of true positives to total positives
+
+```{r}
+total <- 1000 #people in population
+
+tpos <- 0.75 # 75 percent with cancer test positive (True positive)
+
+fneg <- 0.25 # 25% of people who have cancer get a negative result (false negative)
+
+fpos <- 0.07 # 7% of people who don't have cancer get a positive test result (false positive)
+
+fneg <- 0.93 # 93% of people who don't have cancer get a negative result (true negative)
+
+# Total with cancer
+
+cancer <- 0.04*total
+print(cancer)
+
+# Total with no cancer
+
+ncancer <- 0.96*total
+print(ncancer)
+
+# Positive tests among cancer group
+
+pc <- cancer*tpos
+print(pc)
+
+# Positive tests among no cancer group
+
+pnc <- ncancer*fpos
+print(pnc)
+
+# Total positive tests
+totalpos <- pc + pnc
+print(totalpos)
+
+# Ratio of true positives to total positives
+ratios <- pc/totalpos
+print(ratios)
+```
+
+
+#### Via Bayes' Rule
+
+$$Pr[Ca|Positive~Test] = \frac{Pr[Positive~Test|Ca] \times Pr[Ca]}{Pr[Positive~Test]}$$
+
+```{r}
+(0.03*0.04)/0.0972 
+
+((pc*cancer)/totalpos)/1000 #the same as above but with numbers for the 1000 population
+```
+
+How would you counsel a family member who had a positive test?
+
+> I would say that even though they have a postive test, there is still a low chance that they have cancer because both having the cancer is rare and there is not a 100% success rate on getting a true positive.
+
+How do your results change when one of the values changes? Calculate each of the following separately. If you haven't already done so, you may wish to return to the code you wrote above and assign variables that you can change:
+
+1. Only 1% of men over 65 have prostate cancer, but the other values are the same as above
+2. The true positive rate for the PSA test is 95%, but the other values are the same as above
+3. The false positive rate is 1%, but the other values are the same as above
+
+```{r}
+#1. when only 1% have cancer
+
+total <- 1000 #people in population
+
+tpos <- 0.75 # 75 percent with cancer test positive (True positive)
+
+fneg <- 0.25 # 25% of people who have cancer get a negative result (false negative)
+
+fpos <- 0.07 # 7% of people who don't have cancer get a positive test result (false positive)
+
+fneg <- 0.93 # 93% of people who don't have cancer get a negative result (true negative)
+
+# Total with cancer
+
+cancer <- 0.01*total
+print(cancer)
+
+# Total with no cancer
+
+ncancer <- 0.96*total
+print(ncancer)
+
+# Positive tests among cancer group
+
+pc <- cancer*tpos
+print(pc)
+
+# Positive tests among no cancer group
+
+pnc <- ncancer*fpos
+print(pnc)
+
+# Total positive tests
+totalpos <- pc + pnc
+print(totalpos)
+
+# Ratio of true positives to total positives
+ratios <- pc/totalpos
+print(ratios)
+
+((pc*cancer)/totalpos)/1000 #the same as above but with numbers for the 1000 population
+
+```
+
+```{r}
+#2. The true positive rate for the PSA test is 95%, but the other values are the same as above
+
+total <- 1000 #people in population
+
+tpos <- 0.95 # 95 percent with cancer test positive (True positive)
+
+fneg <- 0.05 # 5% of people who have cancer get a negative result (false negative)
+
+fpos <- 0.07 # 7% of people who don't have cancer get a positive test result (false positive)
+
+fneg <- 0.93 # 93% of people who don't have cancer get a negative result (true negative)
+
+# Total with cancer
+
+cancer <- 0.04*total
+print(cancer)
+
+# Total with no cancer
+
+ncancer <- 0.96*total
+print(ncancer)
+
+# Positive tests among cancer group
+
+pc <- cancer*tpos
+print(pc)
+
+# Positive tests among no cancer group
+
+pnc <- ncancer*fpos
+print(pnc)
+
+# Total positive tests
+totalpos <- pc + pnc
+print(totalpos)
+
+# Ratio of true positives to total positives
+ratios <- pc/totalpos
+print(ratios)
+
+((pc*cancer)/totalpos)/1000 #the same as above but with numbers for the 1000 population
+
+```
+
+```{r}
+#3. The false positive rate is 1%, but the other values are the same as above
+
+total <- 1000 #people in population
+
+tpos <- 0.75 # 75 percent with cancer test positive (True positive)
+
+fneg <- 0.25 # 25% of people who have cancer get a negative result (false negative)
+
+fpos <- 0.01 # 1% of people who don't have cancer get a positive test result (false positive)
+
+fneg <- 0.99 # 99% of people who don't have cancer get a negative result (true negative)
+
+# Total with cancer
+
+cancer <- 0.04*total
+print(cancer)
+
+# Total with no cancer
+
+ncancer <- 0.96*total
+print(ncancer)
+
+# Positive tests among cancer group
+
+pc <- cancer*tpos
+print(pc)
+
+# Positive tests among no cancer group
+
+pnc <- ncancer*fpos
+print(pnc)
+
+# Total positive tests
+totalpos <- pc + pnc
+print(totalpos)
+
+# Ratio of true positives to total positives
+ratios <- pc/totalpos
+print(ratios)
+
+((pc*cancer)/totalpos)/1000 #the same as above but with numbers for the 1000 population
+```
+
+
+What is your interpretation of the factors that result in the condition, given a single positive test?
+
+> Even when these values become more and more accurate, like the false positive only occuring 1% of the time, the probability of having cancer is still only three percent. I would probably get a second opionion or do another test before doing any cancer treatment.
+
+## Random Samples
+
+R has a random number generator (actually a [pseudorandom number generator](https://en.wikipedia.org/wiki/Pseudorandom_number_generator)). Being able to simulate randomness is a critical component of programming. However, how does one avoid getting slightly different results every time you run your program if it includes randomness? R's solution, and the way to make your code reproducible, is to set the seed using `set.seed()`. Imagine you run a power simulation by randomly generating data and claim your power is 84%. How would another research confirm your results? Let's explore this feature.
+
+
+### Activity
+
+Without setting the seed, generate two objects named AA and BB consisting of 5 numbers drawn from a normal distribution with a mean of 0 and a standard deviation of 1 using `rnorm()` and print AA and BB. Run this chunk more than once. Do you get the same answer each time?
+
+```{r}
+AA <- rnorm(5, mean = 0, sd =1)
+BB <- rnorm(5, mean = 0, sd =1)
+
+AA
+BB
+```
+
+> No you get  different numbers each time
+
+Now, set the seed for the random number generator, and do the same as above. Chose any integer and place it in `set.seed()`. Run this chunk more than once. Do you get the same answer each time? Are AA and BB the same?
+
+```{r}
+set.seed(58)
+AA <- rnorm(5, mean = 0, sd =1)
+BB <- rnorm(5, mean = 0, sd =1)
+
+AA
+BB
+
+```
+
+> now they are the same each time you run the code.But AA and BB are different.
+
+What would happen if you set the seed, generate AA, set the seed again with the same number and then generate BB? Try this.
+
+```{r}
+set.seed(58)
+AA <- rnorm(5, mean = 0, sd =1)
+
+set.seed(58)
+BB <- rnorm(5, mean = 0, sd =1)
+
+AA
+BB
+
+```
+
+> now AA and BB are the same each time.
+
+One key feature for simulating randomness in R is the `sample()` function. Imagine you had a list of potential participants for a study (e.g., the list of likely voters in the U.S.). You could use `sample()` to choose a random set. Let's try this with a set of letters representing people and we will randomly assign each to a group by sampling `c('Treatment','Control')` *with replacement*.
+
+Look at the help file for `sample()` and see what the arguments below mean.
+
+```{r}
+set.seed(592777)
+pp_all <- tibble(
+  id = letters[1:26],
+  tx = sample(c('Treatment', 'Control'), 26, replace = TRUE)
+)
+```
+
+Try the following:
+
+1. Generate a random sample of 5 elements from the `id` column without replacement
+2. Select a random sample of 5 ids with their associated tx (hint: sample the set of row indices [1 to 26] and take only those rows). Look at the help for the tidyverse function`slice_sample()` and see if you can figure out how to slice a random set of rows using a pipe.
+
+```{r}
+sample(pp_all$id, 5, replace = FALSE)
+
+pp_all |>
+slice_sample(n=5)
+```
+
+How would you use `slice_sample()` to randomly select 50% of the rows without first counting the number of rows?
+
+```{r}
+
+pp_all |>
+  slice_sample(prop = 0.5)
+```
+
+One final note on `set.seed()`: typically, you just need to set the seed once at the top of your script to anchor the random number generator. However, any time you generate random numbers or sample, you should consider whether you need to set the seed.
+
+
+## Distributions
+
+We want to give you some practice generating random numbers and plotting. These activities are critical to numerical simulation, which we will do off and on throughout the course.
+
+
+### Activity
+
+For each of the following, generate a set of values and plot a histogram. You may want to adjust the number of bins (`bins = ` argument to `geom_histogram()`).
+
+1. 5 values from a normal distribution with a mean of 5 and a standard deviation of 1
+2. 100 values from a normal distribution with a mean of 5 and a standard deviation of 1
+3. 100000 values from a normal distribution with a mean of 5 and a standard deviation of 1
+4. 5 values from a normal distribution with a mean of 5 and a standard deviation of 5
+5. 100 values from a normal distribution with a mean of 5 and a standard deviation of 5
+6. 100000 values from a normal distribution with a mean of 5 and a standard deviation of 5
+7. 1000 values from a uniform distribution with a minimum of 0 and maximum of 100.
+
+```{r}
+#1. 5 values from a normal distribution with a mean of 5 and a standard deviation of 1
+
+x1 <- rnorm(5, 5, 1)
+
+ggplot(tibble(x=x1), aes(x)) +
+  geom_histogram(bins=50)
+
+#2. 100 values from a normal distribution with a mean of 5 and a standard deviation of 1
+
+x2 <- rnorm(100, 5, 1)
+
+ggplot(tibble(x=x2), aes(x)) +
+  geom_histogram(bins=50)
+
+#3. 100000 values from a normal distribution with a mean of 5 and a standard deviation of 1
+x3 <- rnorm(100000, 5, 1)
+
+ggplot(tibble(x=x3), aes(x)) +
+  geom_histogram(bins=1000)
+
+#4. 5 values from a normal distribution with a mean of 5 and a standard deviation of 5
+x4 <- rnorm(5, 5, 5)
+
+ggplot(tibble(x=x4), aes(x)) +
+  geom_histogram(bins=50)
+
+#5. 100 values from a normal distribution with a mean of 5 and a standard deviation of 5
+x5 <- rnorm(100, 5, 5)
+
+ggplot(tibble(x=x5), aes(x)) +
+  geom_histogram(bins=50)
+
+#6. 100000 values from a normal distribution with a mean of 5 and a standard deviation of 5
+x6 <- rnorm(100000, 5, 5)
+
+ggplot(tibble(x=x6), aes(x)) +
+  geom_histogram(bins=50)
+
+#7.  1000 values from a uniform distribution with a minimum of 0 and maximum of 100.
+x7 <- runif(1000, 0, 100)
+ggplot(tibble(x=x7), aes(x)) +
+  geom_histogram(bins=50)
+```
+
+Create a density plot for #3 and #6 above on the same plot. First create a single data frame with both sets and a column identifying each group.
+
+```{r}
+x3tibble <- tibble(value = x3)
+x3tibble <- x3tibble |>
+  mutate(dta_src = "x3")
+
+x6tibble <- tibble(value = x6)
+x6tibble <- x6tibble |>
+  mutate(dta_src = "x6")
+
+x36 <- bind_rows(x6tibble, x3tibble)
+
+x36 |>
+  ggplot(aes(x= value, color = dta_src)) +
+  geom_density()
+```
+
+Add a vertical line to your plot at x = 7.
+
+```{r}
+
+# With vertical line at x = 7
+x36 |>
+ggplot(aes(x = value, color = dta_src)) +
+  geom_density() + 
+  geom_vline(xintercept = 7)
+
+```
+
+Consider #3 and #6 from above. What proportion of values from each set are above 7?
+
+```{r}
+print(mean(x36 > 7))
+
+print(mean(x3 >7))
+
+print(mean(x6 >7))
+```
+
+The following code uses `pnorm()` to calculate the probability of observing a value of 7 or greater for each distribution.
+
+```{r}
+pnorm(7, mean = 5, sd = 1, lower.tail = FALSE)
+pnorm(7, mean = 5, sd = 5, lower.tail = FALSE)
+```
+
+Compare the values returned by `pnorm()` to those you calculated manually above:
+
+> The values are very close so this could be a good alternative way to check the probility if our data was perfectly normal it would be find but that is not practical in the real world.
+
+Although `pnorm()` (and the other `p` functions) use equations to calculate probabilities, as n gets very large, the values will asymptotically approach simply summing up observations above or below some critical value.
+
+Please indicate whether you used any generative AI tools to help you with this problem set and explain how you used these. An example of how to structure this statement is below. If you did not use generative AI, you can simply state: "I did not use AI for this problem set."
+
+Example statement structure: "I acknowledge the use of AI in completing this assignment and would like to provide a brief explanation of how I utilized AI, specifically [LLM], as a tool to support my work. For this assignment, I employed [LLM] to [describe the specific purpose or task]. To do so I crafted the following prompts: [List prompts used]"
+
+> We did not use Ai to answer any of the questions in this problem set.

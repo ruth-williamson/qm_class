@@ -23,6 +23,30 @@ library(ggplot2)
 
 ```
 
+```{r}
+#none of the people are left handed 
+dbinom(0, 24, prob = 0.1)
+
+#one person is left handed
+dbinom(1, 24, prob = 0.1)
+
+#one or more are left handed
+sum(dbinom(1:24, 24, prob = 0.1))
+```
+
+```{r}
+#binomial coefficient
+#these successes could happen in any number, three things, choose two
+choose(3, 2)
+
+choose(69, 5) * choose(26, 1) #chance of getting when 
+
+2* choose(69, 5) * choose(26, 1) #expected value when the cost of ticket would give more than 2 dollars the price of the ticket
+```
+
+```{r}
+
+```
 
 ## Size Dimorphism in Spiders
 
@@ -388,18 +412,18 @@ Hint `(length(unique(<variable-of-interest>)))` will give you the number of rows
 #### Activity
 
 ```{r}
-richness <- comp |>
-  group_by(plot_no) |>
-  group_by(subplot) |>
-  mutate(richness = length(unique(species))) #this is the one I made, and I'm not sure why it is like this
+#richness <- comp |>
+ # group_by(plot_no) |>
+  #group_by(subplot) |>
+  #mutate(richness = length(unique(species))) #this is the one I made, and I'm not sure why it is like this
 
-richness2 <- comp |>
-  group_by(subplot, plot_no) |>
-  mutate(richness = length(unique(species))) #why is this better than the one above
+#richness2 <- comp |>
+ # group_by(subplot, plot_no) |>
+  #mutate(richness = length(unique(species))) #why is this better than the one above
 
 richness3 <- comp |>
   group_by(plot_no, subplot) |>
-  mutate(richness = length(unique(species))) #this is the same as the one above
+  summarize(richness = length(unique(species))) #copying from answer key now
 ```
 
 
@@ -424,9 +448,9 @@ As we discussed in lecture, there are many different functions for joining in th
 Join your plot level data to your species richness data using `left_join()`. You can save this as the same object that the richness was saved as previously, given this is the data you are building upon. Try doing this in two different ways, one where you specify the columns you want to join by, and one where you don't and let `left_join()` pick the columns that automatically match. This should help you see the power of these joining functions.
 
 ```{r}
-richnessdf <- left_join(richness3,plot_ids)
+richness <- left_join(richness,plot_ids)
 
-glimpse(richnessdf)
+glimpse(richness)
 
 
 richness_sp <- left_join(richness3, plot_ids, by=join_by(plot_no, subplot))
@@ -474,8 +498,8 @@ Create a scatterplot that shows how rain removal influences the average species 
 - Feel free to fix up the axis labels and choose a new color scheme if you wish.
 
 ```{r}
-richness_sct |>
-  ggplot(aes(x=rain_removal, y=`mean(richness)`, color=plot_no)) +
+richness_sp |>
+  ggplot(aes(x=rain_removal, y=richness, color=factor(plot_no))) +
   geom_point(size = 3,
              position = position_jitter(width = 0.3),
              alpha = 0.5) +
@@ -486,8 +510,8 @@ With a scatterplot and this number of plots, it is difficult to see the trends p
 
 
 ```{r}
-richness_sct |>
-  ggplot(aes(x=rain_removal, y=richness, color=plot_no)) +
+richness_sp |>
+  ggplot(aes(x=rain_removal, y=richness, color=factor(plot_no))) +
   geom_boxplot() +
   labs(x="Rain Level", y = "Mean Richness")
 
