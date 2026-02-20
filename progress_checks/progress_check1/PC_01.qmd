@@ -46,7 +46,7 @@ You will need to perform a series of steps to explore this data. Remember to kee
 Read in the `soil_respiration.csv` data file. Columns represent plots, and each cell contains the respiration rates in each of these plots for each of the crop treatments. Put your data into long-format. The column name for your soil respiration data should be "Rs"
 
 ```{r}
-soil_resp_og <- read_csv("soil_respiration.csv") #reading in soil respiration data using read_csv from tidyverse
+soil_resp_og <- read_csv("soil_respiration.csv") #reading in soil respiration data using read_csv 
 
 #data transformed from wide to long format:
 soil_resp <- soil_resp_og |>
@@ -138,12 +138,42 @@ Next we want to examine how the enhanced vegetation index (EVI) relates to the s
 Using your long dataset that has the 40.04 value replaced with 4.04, merge the EVI dataset (`EVI.csv`) with the soil respiration data. You will notice that the EVI dataset does not currently have unique indicators (or key values) to merge with the soil respiration data.  You can do two things, either 1) join based on multiple columns (save as `new1`), or 2) create a unique identifier column for both datasets (using for example, `mutate()` and `paste()` to combine the similar columns) and join with the unique ID column (save as `new2`). Practice both below. (NOTE: This example and the extra data wrangling you need to do here shows why you should always have plot numbers or some other unique value for each of your datasets.)
 
 ```{r}
+evi_og <- read_csv("EVI.csv") #reading in soil respiration data using read_csv from tidyverse
 
+#joining by merging using multiple columns
+new1 <- left_join(soil_resp_cor, evi_og, by= join_by(Crop, Rs))
+
+#joining by adding identifying column
+soil_resp_cor_id <- soil_resp_cor |>
+  mutate(ID = paste(Crop, Rs, sep= "_"))
+
+evi_id <- evi_og |>
+  mutate(ID = paste(Crop, Rs, sep = "_"))
+# think a flaw in this would occur if there were any duplicate readings of the crop Rs values
+
+new2 <- left_join(soil_resp_cor_id, evi_id, by= join_by(ID))
 ```
 
 Using `new1` (the dataset without the extra columns - e.g., only `Rs` and `Crop`, not `Rs.x`, `Rs.y`, `Crop.x`, `Crop.y`), create a graph that demonstrates how EVI influences `Rs` for each crop type. Include the trend line for each crop type. Make sure your axes are understandable.
 
 ```{r}
+#relationship between EVI and RS
+new1|>
+  ggplot(aes(x=EVI, y=Rs, color=Crop)) +
+  geom_point(size = 3, alpha = 0.5) +
+  geom_smooth(formula = y~x, method = "lm", se=FALSE) +
+  facet_grid(Crop~.) +
+  labs(x = "Enhanced Vegative Index", y= "Soil Respiration")
+
+
+#just looking at this another way....
+new1 |>
+  ggplot(aes(x=Crop, y=EVI, color = Crop)) + #plotting with crop on the x axis and Rs on the y colored by plot
+  geom_point(position = position_jitter(width = 0.3), #position jitter moved the dots so they aren't on top of each other
+    alpha = 0.5, #alpha makes the dots slightly transparent
+    size = 2) + #size control of dots
+  geom_boxplot(alpha = 2 / 3, outlier.shape = NA) + #making the boxplots slightly transparent and turning off the outliers they don't get confused with the actual data points
+  labs(x= "Crop Type", y= "EVI", color = "Crop Type") 
 
 ```
 
@@ -155,7 +185,10 @@ Allf and colleagues (2016)^[Allf BC, Durst PAP, Pfennig DW. 2016. Behavioral Pla
 The authors provide their data via Dryad in three files: `rattle_probability.csv`, `rattle_duration.csv`, and `rattle_rate.csv`. Examine the files in a text editor or Excel, and start by reading each of these into separate tibbles.
 
 ```{r}
-
+#reading in the files
+rattle_prob <- read_csv("rattle_probability.csv")
+rattle_dur <- read_csv("rattle_duration.csv")
+rattle_rate <- read_csv("rattle_rate.csv")
 ```
 
 The columns in each are:
@@ -183,6 +216,15 @@ The given column names are cumbersome to work with (note that some of the column
 Below, rename the columns to something more manageable: Distance, Probability, Duration, and Rate.
 
 ```{r}
+#renaming the columns to be more managable
+rattle_dur <- rattle_dur |>
+  rename(species = Species, distance = `Species'DistanceToRattlesnakeNode`, duration = `Species'MeanDurationOfVibration`)
+
+rattle_prob <- rattle_prob |>
+  rename(species = Species, distance = `Species'DistanceToRattlesnakeNode`, probability = `PercentOfSpeciesVibrating`)
+
+rattle_rate <- rattle_rate |>
+  rename(species = Species, distance = `Species'DistanceToRattlesnakeNode`, rate = `Species'MeanRateOfVibration`)
 
 ```
 
@@ -193,13 +235,36 @@ Rather than fixing this manually, we will use the `slice()` function. If you pro
 Process each of the tibbles the same way to remove all the alternating NA rows.
 
 ```{r}
+nrow(rattle_dur) #counting the number of rows
+rowstokeep <- seq(2, 82, by=2) #making a list of numbers counting every other starting at 2 and going until 82
 
+rattle_dur <- rattle_dur |>
+  slice(rowstokeep) #slicing and keeping only the even rows which have the data
+```
+
+```{r}
+nrow(rattle_prob) #counting the number of rows
+rowstokeep <- seq(2, 110, by=2) #making a list of numbers counting every other starting at 2 and going until 110
+
+rattle_prob <- rattle_prob |>
+  slice(rowstokeep) #slicing and keeping only the even rows which have the data
+```
+
+```{r}
+nrow(rattle_rate) #counting the number of rows
+rowstokeep <- seq(2, 82, by=2) #making a list of numbers counting every other starting at 2 and going until 110
+
+rattle_rate <- rattle_rate |>
+  slice(rowstokeep) #slicing and keeping only the even rows which have the data
 ```
 
 Check each tibble to make sure that the rows now contain only data. Compare to the raw csv files to make sure that the first and last data rows match (i.e., ensure that all data rows are present).
 
 ```{r}
-
+og_rattle_dur <- read_csv("rattle_duration.csv")
+is.na(rattle_dur)
+is.na(og_rattle_dur)
+#checks to make sure our new file doesn't have na and our old one did.
 ```
 
 Now we are at the point where we can join the tibbles. Because there are only three, the easiest way is to do this join is two steps:
@@ -212,65 +277,87 @@ If you had more than just a few tibbles to join, you might search for a more eff
 Below, fully join the three tibbles into a single new tibble, keeping all rows in all tibbles. You will need to decide which columns to use for joining.
 
 ```{r}
-
+combine_step1 <- left_join(rattle_prob, rattle_dur, by = join_by(species, distance))
+rattle_comb <- left_join(combine_step1, rattle_rate, by = join_by(species, distance))
 ```
 
 Inspect the resulting tibble for missing data. Below, summarize the Probability, Duration, and Rate columns by summing the logical `is.na()`.
 
 ```{r}
 
+summarize(rattle_comb, prob_na = sum(is.na(rattle_comb$probability)), dur_na = sum(is.na(rattle_comb$duration)), rate_na = sum(is.na(rattle_comb$rate)))
+
+#this creates a summary table that shows how many na's are in each row. 
+# rate_na is the column of the summary table and then = sum(is.na(the data frame and the column you want to summarize))
 ```
 
 How many `NA`s does each column have? Can you explain the pattern of missing data?
 
-> 
+> Duration and Rate both have 14 missing data each and probability has 0. This means that probability has 14 additonal species of snakes than the other two.
 
 We will leave these `NA` values in for now.
 
 To facilitate plotting, let's pivot the data to long format and make it tidy. Below, pivot the tibble by Probability, Duration, and Rate to a new tibble. Rename the columns as you wish. You should end up with a tibble with four columns: Species, Distance, one for the variable (Probability, Duration, or Rate), and one for the value.
 
 ```{r}
-
+rattle_long <- rattle_comb |>
+  pivot_longer(cols = c(probability,duration,rate), names_to = "measurement", values_to = "value")
 ```
 
 Plot the "long" tibble you created above. Distance should be on the x-axis and the value on the y-axis. Facet the plot with the variable name by rows. See if you can figure out how to "free" the y-axis scale in the call to `facet_grid()`, so that each panel has it's own scale.
 
 ```{r}
-
+rattle_long|>
+  ggplot(aes(x=distance, y=value, color = measurement )) +
+  geom_point(size = 3, alpha = 0.5) +
+  facet_grid(measurement~., scales = "free_y")+ 
+  labs(x = "Distance from Node", y = "Measurement Values", color = "Rattle: ")
 ```
 
 Add a linear fit to the plot above.
 
 ```{r}
-
+rattle_long|>
+  ggplot(aes(x=distance, y=value, color = measurement )) +
+  geom_point(size = 3, alpha = 0.5) +
+  facet_grid(measurement~., scales = "free_y")+ 
+  geom_smooth(formula = y~x, method = "lm", se=FALSE) +
+  labs(x = "Distance from Node", y = "Measurement Values", color = "Rattle: ")
 ```
 
 What pattern do you observe about the relationship between Duration, Probability, and Rate as a function of Distance to the rattlesnake clade?
 
-> 
+> as you move farther from the node, there is a negative relationship to the variables measured. The less related they are the lower probability for high rattle duration, probability, and rate.
 
 Return to the "wide" tibble. Now plot Rate as a function of Duration, color the points by Distance, and add a linear fit.
 
 ```{r}
+rattle_wide <- rattle_long |>
+  pivot_wider(names_from = measurement, values_from = value)
 
+rattle_wide|>
+  ggplot(aes(x=duration, y=rate, color = distance )) +
+  geom_point(size = 3, alpha = 0.5) +
+  geom_smooth(formula = y~x, method = "lm", se=FALSE) +
+  labs(x = "Rattle Duration", y = "Rattle Rate", color = "Distance from Node")
 ```
 
 From the standpoint of physiology, you might predict the higher rates of tail shaking would be associated with shorter durations of tail shaking to limit overall energy expenditure, because right rates might be more energetically demanding. 
 
 Based on the plot, what do you think of this hypothesis? Does there appear to be any association with Distance? Does this pattern agree with the plot above?
 
-> 
+> There does not seem to be a any association with distance from node and rattle rate and duration. You can see that there is a correlation between longer durations having higher rates but the distance is all over the place. You would expect all the blue ones to be close to the bottom left corner and the blue ones to be more near the top right corner.
 
 
 Finally, think about the nature of the sample and of the data.
 
 Are these species-level data independent? Why or why not? Explain your answer.
 
-> 
+> Yes, because you can't be two species at a time.
 
 The authors provide the data for (and analyze) only species means. How would you suggest they improve analysis and reporting of their data?
 
-> 
+> I would suggest grouping them by distance and then doing analysis since there main question was "how does distance from the node effect rattle traits"
 
 
 # Host Races in Goldenrod Gall Flies
@@ -295,6 +382,27 @@ Do some initial diagnostics to determine if the dataset matches what is describe
 Explain any errors that you find and correct them within R. Also check for and eliminate any rows with missing values. Then write out a new, cleaned dataset as a `.csv` file. 
 
 ```{r}
+gfly_mating <- read_excel("gallfly_mating.xlsx", na="NA") #importing data
+```
+
+```{r}
+#cleaning data file
+glimpse(gfly_mating) #plot is not all in numeric form as we can see from the data type being a character
+gfly_mating |>
+  count(host_race) #Alt and Gig
+gfly_mating |>
+  count(plant_choice) #some are ALT, Alt, Gig, Gigantia, and NA
+
+gfly_mating_cleaned <- gfly_mating |>
+  mutate(host_race = tolower(host_race), 
+         plant_choice = tolower(plant_choice), 
+         plant_choice = str_replace(plant_choice, "gigantia", "gig"), 
+         plot = str_replace(plot, "plot 1", "1"), 
+         plot = str_replace(plot, "plot 2", "2"), 
+         plot = str_replace(plot, "plot 3", "3")) # got rid of the different case and changed gigantia to gig then changed the plot labels to the correct values.
+
+
+
 
 ```
 
